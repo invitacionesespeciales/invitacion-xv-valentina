@@ -2001,23 +2001,23 @@ function generatePlaylistTXT(suggestions, source) {
   content += `Fecha de descarga: ${new Date().toLocaleString('es-CO')}\n\n`;
   content += "------------------------------------------\n\n";
 
+  // ✅ Agrupar SOLO UNA VEZ
   const porCategoria = {};
 
-  // ✅ Agrupar SOLO UNA VEZ
   suggestions.forEach(sug => {
-    const cat = sug.categoria || 'Sin categoría';
-    if (!porCategoria[cat]) {
-      porCategoria[cat] = [];
+    const categoria = sug.categoria || 'Sin categoría';
+    if (!porCategoria[categoria]) {
+      porCategoria[categoria] = [];
     }
-    porCategoria[cat].push(sug);
+    porCategoria[categoria].push(sug);
   });
 
-  // ✅ Imprimir SOLO UNA VEZ por categoría
-  Object.keys(porCategoria).forEach(cat => {
-    content += `\n🎵 ${cat.toUpperCase()}\n`;
+  // ✅ Imprimir SOLO UNA VEZ
+  Object.keys(porCategoria).forEach(categoria => {
+    content += `\n🎵 ${categoria.toUpperCase()}\n`;
     content += "------------------------\n";
 
-    porCategoria[cat].forEach((sug, index) => {
+    porCategoria[categoria].forEach((sug, index) => {
       content += `\nSugerencia #${index + 1}\n`;
       content += `Invitado: ${sug.invitado}\n`;
       content += `Fecha: ${new Date(sug.timestamp).toLocaleString('es-CO')}\n`;
