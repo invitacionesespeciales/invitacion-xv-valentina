@@ -1948,33 +1948,29 @@ function generateConfirmationsTXT(confirmations, source) {
   showToast(`Archivo descargado (${confirmations.length} confirmaciones) 📋`);
 }
         function downloadPlaylist() {
-    showToast('Descargando playlist...');
-    
-    fetchWithTimeout(SCRIPT_URL + '?action=getPlaylist')
-        .then(result => {
-            if (result.success && result.data && result.data.length > 0) {
-                showToast('Datos cargados desde Google Sheets ✅');
-                generatePlaylistTXT(result.data, 'Servidor (Google Sheets)');
-            } else {
-                const localData = StorageManager.getPlaylistSuggestions();
-                if (localData.length > 0) {
-                    showToast('Usando datos locales (offline) ⚠️');
-                    generatePlaylistTXT(localData, 'Local (offline)');
-                } else {
-                    showToast('No hay sugerencias de playlist', 'error');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener playlist:', error);
-            const localData = StorageManager.getPlaylistSuggestions();
-            if (localData.length > 0) {
-                generatePlaylistTXT(localData, 'local (offline)');
-            } else {
-                showToast('No hay sugerencias disponibles', 'error');
-            }
-        });
+  showToast('Descargando playlist...');
+
+  fetch(SCRIPT_URL + '?action=getPlaylist')
+    .then(res => res.json())
+    .then(result => {
+      console.log('PLAYLIST RAW:', result);
+
+      if (!result || result.success !== true) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      // ✅ SIEMPRE generar TXT si el servidor respondió
+      generatePlaylistTXT(
+        result.data || [],
+        'Servidor (Google Sheets)'
+      );
+    })
+    .catch(error => {
+      console.error('Error descargando playlist:', error);
+      showToast('No se pudo descargar la playlist', 'error');
+    });
 }
+
 
 function generatePlaylistTXT(suggestions, source) {
   let content = "PLAYLIST SUGERIDA - XV VALENTINA SAENZ VARGAS\n";
