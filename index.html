@@ -1793,10 +1793,11 @@
 
         // Guardar playlist - GUARDAR EN LOCALSTORAGE
         function savePlaylist() {
-  const suggestions = document.getElementById('playlistSuggestions').value;
+  const textarea = document.getElementById('playlistSuggestions');
+  const suggestions = textarea.value.trim();
   const guestName = document.getElementById('guestName').textContent;
 
-  if (!suggestions.trim()) {
+  if (!suggestions) {
     closePlaylistModal();
     return;
   }
@@ -1811,27 +1812,22 @@
       : 'Computadora'
   };
 
-  // ✅ Guardar local como respaldo (como estaba antes)
-  StorageManager.savePlaylistSuggestion({
-    invitado: guestName,
-    categoria: selectedCategory,
-    sugerencias: suggestions,
-    fecha: new Date().toLocaleString('es-CO')
-  });
+  // ✅ UX OPTIMISTA
+  closePlaylistModal();                     // 1️⃣ Cierra ya
+  showToast('¡Sugerencias guardadas! 🎵');  // 2️⃣ Feedback inmediato
+  textarea.value = '';
 
-  // ✅ Enviar a Google Sheets
+  // ✅ Envío en segundo plano (sin bloquear UX)
   fetchWithTimeout(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify(playlistData)
   })
-    .then(() => {
-      showToast('¡Sugerencias guardadas! 🎵');
-      closePlaylistModal();
-      document.getElementById('playlistSuggestions').value = '';
-    })
     .catch(() => {
-      showToast('Guardado localmente 🎵');
-      closePlaylistModal();
+      // Solo si falla: respaldo local (sin molestar al invitado)
+      StorageManager.savePlaylistSuggestion({
+        ...playlistData,
+        fecha: new Date().toLocaleString('es-CO')
+      });
     });
 }
 
