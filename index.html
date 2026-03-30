@@ -1904,36 +1904,25 @@
         }
 
         function downloadConfirmations() {
-    showToast('Descargando confirmaciones...');
-    
-    // Intentar obtener del servidor primero
-    showToast('Descargando confirmaciones...');
-    fetchWithTimeout(SCRIPT_URL + '?action=getConfirmations')
-        .then(result => {
-            if (result.success && result.data && result.data.length > 0) {
-                showToast('Datos cargados desde Google Sheets ✅');
-                generateConfirmationsTXT(result.data, 'Servidor (Google Sheets)');
-            } else {
-                // Si no hay en servidor, usar local
-                const localData = StorageManager.getConfirmations();
-                if (localData.length > 0) {
-                    showToast('Usando datos locales (offline) ⚠️');
-                    generateConfirmationsTXT(localData, 'Local (offline)');
-                } else {
-                    showToast('No hay confirmaciones registradas', 'error');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error al obtener del servidor:', error);
-            // Fallback a localStorage
-            const localData = StorageManager.getConfirmations();
-            if (localData.length > 0) {
-                generateConfirmationsTXT(localData, 'local (offline)');
-            } else {
-                showToast('No hay confirmaciones disponibles', 'error');
-            }
-        });
+  showToast('Descargando confirmaciones...');
+
+  fetchWithRetry(SCRIPT_URL + '?action=getConfirmations')
+    .then(result => {
+      // ✅ MISMA lógica que playlist
+      if (result && result.success && Array.isArray(result.data)) {
+        showToast('Datos cargados desde Google Sheets ✅');
+        generateConfirmationsTXT(
+          result.data,
+          'Servidor (Google Sheets)'
+        );
+      } else {
+        showToast('No hay confirmaciones disponibles', 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error descargando confirmaciones:', error);
+      showToast('Error al descargar confirmaciones', 'error');
+    });
 }
 
 // Función auxiliar para generar el TXT
