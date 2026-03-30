@@ -1793,63 +1793,61 @@
 
         // Guardar playlist - GUARDAR EN LOCALSTORAGE
         function savePlaylist() {
-    const suggestions = document.getElementById('playlistSuggestions').value;
-    const guestName = document.getElementById('guestName').textContent;
-    
-    if (!suggestions.trim()) {
-        closePlaylistModal();
-        return;
-    }
-    
-    const playlistData = {
-        invitado: guestName,
-        categoria: selectedCategory,
-        sugerencias: suggestions,
-        dispositivo: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ? 'Móvil' : 'Computadora'
-    };
-    
-    // Guardar localmente primero (backup)
-    StorageManager.savePlaylistSuggestion({
-        invitado: guestName,
-        categoria: selectedCategory,
-        sugerencias: suggestions,
-        fecha: new Date().toLocaleString('es-CO')
-    });
-    
-    // Enviar a Google Sheets
-    fetchWithTimeout(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify(playlistData)
-    })
-    .then(response => response.json())
-    .then(() => {
-        if (!result.success) {
-            throw new Error('No se pudo guardar playlist en Sheets');
-        }
+  const textarea = document.getElementById('playlistSuggestions');
+  const suggestions = textarea.value.trim();
 
-        showToast('¡Sugerencias guardadas! 🎵');
-        closePlaylistModal();
-        document.getElementById('playlistSuggestions').value = '';
-    })
-.catch(error => {
-  console.error('Error:', error);
+  if (!suggestions) {
+    closePlaylistModal();
+    return;
+  }
 
-  StorageManager.savePlaylistSuggestion({
-    invitado: guestName,
+  const btn = document.querySelector('#playlistModal .btn-confirm-modal');
+  const originalText = btn.textContent;
+
+  // ✅ Bloquear botón inmediatamente (EVITA DOBLE ENVÍO)
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
+
+  const playlistData = {
+    invitado: document.getElementById('guestName').textContent,
     categoria: selectedCategory,
     sugerencias: suggestions,
-    timestamp: new Date().toLocaleString('es-CO')
-  });
+    dispositivo: /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+      ? 'Móvil'
+      : 'Computadora'
+  };
 
-  showToast('Guardado localmente 🎵');
-  closePlaylistModal();
-})
-.finally(() => {
-  const btn = document.querySelector('.btn-confirm-modal');
-  if (btn) btn.disabled = false;
-});
+  fetchWithTimeout(SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify(playlistData)
+  })
+    .then(res => res.json())
+    .then(result => {
+      if (!result.success) {
+        throw new Error('Error al guardar playlist');
+      }
 
-    
+      showToast('¡Sugerencias guardadas! 🎵');
+      closePlaylistModal();
+      textarea.value = '';
+    })
+    .catch(err => {
+      console.error(err);
+
+      // ✅ Fallback local SOLO si falla servidor
+      StorageManager.savePlaylistSuggestion({
+        ...playlistData,
+        timestamp: new Date().toLocaleString('es-CO')
+      });
+
+      showToast('Guardado localmente 🎵');
+      closePlaylistModal();
+    })
+    .finally(() => {
+      // ✅ Restaurar botón SIEMPRE
+      btn.textContent = originalText;
+      btn.disabled = false;
+    });
 }
 
         // Contraseña del admin (cámbiala por la que prefieras)
