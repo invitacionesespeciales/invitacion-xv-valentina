@@ -1793,60 +1793,45 @@
 
         // Guardar playlist - GUARDAR EN LOCALSTORAGE
         function savePlaylist() {
-  const textarea = document.getElementById('playlistSuggestions');
-  const suggestions = textarea.value.trim();
+  const suggestions = document.getElementById('playlistSuggestions').value;
+  const guestName = document.getElementById('guestName').textContent;
 
-  if (!suggestions) {
+  if (!suggestions.trim()) {
     closePlaylistModal();
     return;
   }
 
-  const btn = document.querySelector('#playlistModal .btn-confirm-modal');
-  const originalText = btn.textContent;
-
-  // ✅ Bloquear botón inmediatamente (EVITA DOBLE ENVÍO)
-  btn.textContent = 'Guardando...';
-  btn.disabled = true;
-
   const playlistData = {
-    invitado: document.getElementById('guestName').textContent,
+    invitado: guestName,
     categoria: selectedCategory,
     sugerencias: suggestions,
-    dispositivo: /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    dispositivo: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+      .test(navigator.userAgent)
       ? 'Móvil'
       : 'Computadora'
   };
 
+  // ✅ Guardar local como respaldo (como estaba antes)
+  StorageManager.savePlaylistSuggestion({
+    invitado: guestName,
+    categoria: selectedCategory,
+    sugerencias: suggestions,
+    fecha: new Date().toLocaleString('es-CO')
+  });
+
+  // ✅ Enviar a Google Sheets
   fetchWithTimeout(SCRIPT_URL, {
     method: 'POST',
     body: JSON.stringify(playlistData)
   })
-    .then(res => res.json())
-    .then(result => {
-      if (!result.success) {
-        throw new Error('Error al guardar playlist');
-      }
-
+    .then(() => {
       showToast('¡Sugerencias guardadas! 🎵');
       closePlaylistModal();
-      textarea.value = '';
+      document.getElementById('playlistSuggestions').value = '';
     })
-    .catch(err => {
-      console.error(err);
-
-      // ✅ Fallback local SOLO si falla servidor
-      StorageManager.savePlaylistSuggestion({
-        ...playlistData,
-        timestamp: new Date().toLocaleString('es-CO')
-      });
-
+    .catch(() => {
       showToast('Guardado localmente 🎵');
       closePlaylistModal();
-    })
-    .finally(() => {
-      // ✅ Restaurar botón SIEMPRE
-      btn.textContent = originalText;
-      btn.disabled = false;
     });
 }
 
@@ -1999,19 +1984,21 @@ function generatePlaylistTXT(suggestions, source) {
   content += `Fecha de descarga: ${new Date().toLocaleString('es-CO')}\n\n`;
   content += "------------------------------------------\n\n";
 
-  // ✅ Agrupar SOLO UNA VEZ
-  const porCategoria = {};
+  // ✅ Agrupar UNA sola vez
+  const porCategoria = Object.create(null);
 
-  suggestions.forEach(sug => {
+  for (let i = 0; i < suggestions.length; i++) {
+    const sug = suggestions[i];
     const categoria = sug.categoria || 'Sin categoría';
+
     if (!porCategoria[categoria]) {
       porCategoria[categoria] = [];
     }
     porCategoria[categoria].push(sug);
-  });
+  }
 
-  // ✅ Imprimir SOLO UNA VEZ
-  Object.keys(porCategoria).forEach(categoria => {
+  // ✅ Imprimir UNA sola vez
+  for (const categoria in porCategoria) {
     content += `\n🎵 ${categoria.toUpperCase()}\n`;
     content += "------------------------\n";
 
@@ -2021,7 +2008,7 @@ function generatePlaylistTXT(suggestions, source) {
       content += `Fecha: ${new Date(sug.timestamp).toLocaleString('es-CO')}\n`;
       content += `Canciones:\n${sug.sugerencias}\n`;
     });
-  });
+  }
 
   downloadFile(
     content,
