@@ -1994,70 +1994,44 @@ function generateConfirmationsTXT(confirmations, source) {
 }
 
 function generatePlaylistTXT(suggestions, source) {
-    let content = "PLAYLIST SUGERIDA - XV VALENTINA SAENZ VARGAS\n";
-    content += "=============================================\n\n";
-    content += `Total de sugerencias: ${suggestions.length}\n`;
-    content += `Fuente: ${source}\n`;
-    content += `Fecha de descarga: ${new Date().toLocaleString('es-CO')}\n\n`;  // ← CORREGIDO: backtick al final
-    content += "------------------------------------------\n\n";
-    
-    // Agrupar por categoría
-    const porCategoria = {};
-    suggestions.forEach(sug => {
-        const cat = sug.categoria || sug[2] || 'Sin categoría';
-        if (!porCategoria[cat]) {
-            porCategoria[cat] = [];
-        }
-        porCategoria[cat].push(sug);
+  let content = "PLAYLIST SUGERIDA - XV VALENTINA SAENZ VARGAS\n";
+  content += "=============================================\n\n";
+  content += `Total de sugerencias: ${suggestions.length}\n`;
+  content += `Fuente de datos: ${source}\n`;
+  content += `Fecha de descarga: ${new Date().toLocaleString('es-CO')}\n\n`;
+  content += "------------------------------------------\n\n";
+
+  const porCategoria = {};
+
+  // ✅ Agrupar SOLO UNA VEZ
+  suggestions.forEach(sug => {
+    const cat = sug.categoria || 'Sin categoría';
+    if (!porCategoria[cat]) {
+      porCategoria[cat] = [];
+    }
+    porCategoria[cat].push(sug);
+  });
+
+  // ✅ Imprimir SOLO UNA VEZ por categoría
+  Object.keys(porCategoria).forEach(cat => {
+    content += `\n🎵 ${cat.toUpperCase()}\n`;
+    content += "------------------------\n";
+
+    porCategoria[cat].forEach((sug, index) => {
+      content += `\nSugerencia #${index + 1}\n`;
+      content += `Invitado: ${sug.invitado}\n`;
+      content += `Fecha: ${new Date(sug.timestamp).toLocaleString('es-CO')}\n`;
+      content += `Canciones:\n${sug.sugerencias}\n`;
     });
-    
-    const categorias = ['reggaeton', 'merengue', 'salsa', 'popular'];
-    const emojis = {
-        'reggaeton': '🔥',
-        'merengue': '💃',
-        'salsa': '🎺',
-        'popular': '🤠'
-    };
-    
-    categorias.forEach(cat => {
-        if (porCategoria[cat]) {
-            content += `\n${emojis[cat] || '🎵'} ${cat.toUpperCase()}\n`;
-            content += "------------------------\n";
-            
-            porCategoria[cat].forEach((sug, index) => {
-                const invitado = sug.invitado || sug[1];
-                const fecha = sug.timestamp || sug.fecha || sug[0] || 'Fecha desconocida';
-                const canciones = sug.sugerencias || sug[3];
-                
-                content += `\nSugerencia #${index + 1} - ${invitado}\n`;
-                content += `Fecha: ${fecha}\n`;
-                content += `Canciones:\n${canciones}\n`;
-            });
-            
-            content += "\n";
-        }
-    });
-    
-    // Si hay categorías no listadas
-    Object.keys(porCategoria).forEach(cat => {
-        if (!categorias.includes(cat)) {
-            content += `\n🎵 ${cat.toUpperCase()}\n`;
-            content += "------------------------\n";
-            
-            porCategoria[cat].forEach((sug, index) => {
-                const invitado = sug.invitado || sug[1];
-                const fecha = sug.timestamp || sug.fecha || sug[0] || 'Fecha desconocida';
-                const canciones = sug.sugerencias || sug[3];
-                
-                content += `\nSugerencia #${index + 1} - ${invitado}\n`;
-                content += `Fecha: ${fecha}\n`;
-                content += `Canciones:\n${canciones}\n`;
-            });
-        }
-    });
-    
-    downloadFile(content, `playlist_xv_valentina_${formatDateFile()}.txt`, 'text/plain');
-    showToast(`Playlist descargada (${suggestions.length} sugerencias) 🎵`);
+  });
+
+  downloadFile(
+    content,
+    `playlist_xv_valentina_${formatDateFile()}.txt`,
+    'text/plain'
+  );
+
+  showToast(`Playlist descargada (${suggestions.length} sugerencias) 🎵`);
 }
 
         function viewStats() {
