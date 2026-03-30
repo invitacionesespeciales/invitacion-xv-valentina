@@ -1906,22 +1906,24 @@
         function downloadConfirmations() {
   showToast('Descargando confirmaciones...');
 
-  fetchWithRetry(SCRIPT_URL + '?action=getConfirmations')
+  fetch(SCRIPT_URL + '?action=getConfirmations')
+    .then(res => res.json())
     .then(result => {
-      // ✅ MISMA lógica que playlist
-      if (result && result.success && Array.isArray(result.data)) {
-        showToast('Datos cargados desde Google Sheets ✅');
-        generateConfirmationsTXT(
-          result.data,
-          'Servidor (Google Sheets)'
-        );
-      } else {
-        showToast('No hay confirmaciones disponibles', 'error');
+      console.log('CONFIRMACIONES RAW:', result); // ← importante
+
+      if (!result || result.success !== true) {
+        throw new Error('Respuesta inválida del servidor');
       }
+
+      // ✅ SIEMPRE generar TXT si el servidor respondió
+      generateConfirmationsTXT(
+        result.data || [],
+        'Servidor (Google Sheets)'
+      );
     })
-    .catch(error => {
-      console.error('Error descargando confirmaciones:', error);
-      showToast('Error al descargar confirmaciones', 'error');
+    .catch(err => {
+      console.error('ERROR CONFIRMACIONES:', err);
+      showToast('No se pudo descargar confirmaciones', 'error');
     });
 }
 
