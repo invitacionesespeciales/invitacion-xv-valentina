@@ -1655,15 +1655,14 @@
             
             maxGuests = parseInt(max) || 2;
             
-            if (nombre) {
-                const nombreFormateado = nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase();
-                const nombreCompleto = apellido 
-                    ? nombreFormateado + ' ' + (apellido.charAt(0).toUpperCase() + apellido.slice(1).toLowerCase())
-                    : nombreFormateado;
-                
-                guestNameEl.textContent = nombreCompleto;
-                confirmNameInput.value = nombreCompleto;
-            }
+           if (nombre) {
+            const nombreCompleto = apellido
+                ? `${nombre} ${apellido}`
+                : nombre;
+
+           guestNameEl.textContent = nombreCompleto;
+           confirmNameInput.value = nombreCompleto;
+           }
             
             guestBadge.textContent = `Invitados permitidos: ${maxGuests}`;
             maxIndicator.textContent = `Máximo permitido: ${maxGuests} invitado${maxGuests > 1 ? 's' : ''}`;
